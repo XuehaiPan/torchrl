@@ -380,7 +380,6 @@
 <span class="kn">from</span> <span class="nn">tensordict</span> <span class="kn">import</span> <span class="n">TensorDict</span>
 <span class="kn">from</span> <span class="nn">tensordict.tensordict</span> <span class="kn">import</span> <span class="n">LazyStackedTensorDict</span><span class="p">,</span> <span class="n">TensorDictBase</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">multiprocessing</span> <span class="k">as</span> <span class="n">mp</span>
-
 <span class="kn">from</span> <span class="nn">torchrl._utils</span> <span class="kn">import</span> <span class="n">_check_for_faulty_process</span>
 <span class="kn">from</span> <span class="nn">torchrl.data</span> <span class="kn">import</span> <span class="n">CompositeSpec</span><span class="p">,</span> <span class="n">TensorSpec</span>
 <span class="kn">from</span> <span class="nn">torchrl.data.utils</span> <span class="kn">import</span> <span class="n">CloudpickleWrapper</span><span class="p">,</span> <span class="n">DEVICE_TYPING</span>
@@ -1143,10 +1142,9 @@
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_workers</span><span class="p">):</span>
             <span class="n">msg</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parent_channels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">recv</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">msg</span> <span class="o">!=</span> <span class="s2">&quot;step_result&quot;</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">msg</span> <span class="o">!=</span> <span class="s2">&quot;done&quot;</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Expected &#39;done&#39; but received </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2"> from worker </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
-                    <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Expected &#39;step_result&#39; but received </span><span class="si">{</span><span class="n">msg</span><span class="si">}</span><span class="s2"> from worker </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
             <span class="c1"># data is the set of updated keys</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span><span class="o">.</span><span class="n">union</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="c1"># We must pass a clone of the tensordict, as the values of this tensordict</span>
@@ -1366,13 +1364,18 @@
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;call &#39;init&#39; before resetting&quot;</span><span class="p">)</span>
             <span class="c1"># _td = tensordict.select(&quot;observation&quot;).to(env.device).clone()</span>
             <span class="n">_td</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">_reset</span><span class="p">(</span><span class="o">**</span><span class="n">reset_kwargs</span><span class="p">)</span>
+            <span class="n">done</span> <span class="o">=</span> <span class="n">_td</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">done</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">_td</span><span class="p">[</span><span class="s2">&quot;done&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">done</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                    <span class="o">*</span><span class="n">_td</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">env</span><span class="o">.</span><span class="n">device</span>
+                <span class="p">)</span>
             <span class="k">if</span> <span class="n">reset_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">reset_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_td</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">pin_memory</span><span class="p">:</span>
                 <span class="n">_td</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span>
             <span class="n">tensordict</span><span class="o">.</span><span class="n">update_</span><span class="p">(</span><span class="n">_td</span><span class="p">)</span>
             <span class="n">child_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">((</span><span class="s2">&quot;reset_obs&quot;</span><span class="p">,</span> <span class="n">reset_keys</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">_td</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">env</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is done after reset&quot;</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">cmd</span> <span class="o">==</span> <span class="s2">&quot;step&quot;</span><span class="p">:</span>
@@ -1391,10 +1394,7 @@
             <span class="k">if</span> <span class="n">pin_memory</span><span class="p">:</span>
                 <span class="n">_td</span><span class="o">.</span><span class="n">pin_memory</span><span class="p">()</span>
             <span class="n">tensordict</span><span class="o">.</span><span class="n">update_</span><span class="p">(</span><span class="n">_td</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">step_keys</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">_td</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">):</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;done&quot;</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;step_result&quot;</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;step_result&quot;</span>
             <span class="n">data</span> <span class="o">=</span> <span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">step_keys</span><span class="p">)</span>
             <span class="n">child_pipe</span><span class="o">.</span><span class="n">send</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 
