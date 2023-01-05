@@ -400,6 +400,12 @@
     <span class="k">return</span> <span class="n">decorated_fun</span>
 
 
+<span class="k">def</span> <span class="nf">_sort_keys</span><span class="p">(</span><span class="n">element</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">&quot;_-|-_&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">element</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">element</span>
+
+
 <span class="k">class</span> <span class="nc">_dispatch_caller_parallel</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">parallel_env</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">attr</span> <span class="o">=</span> <span class="n">attr</span>
@@ -782,17 +788,17 @@
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_task</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">env_input_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_input_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_spec</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="n">_sort_keys</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">env_input_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
                 <span class="k">for</span> <span class="n">meta_data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta_data</span><span class="p">:</span>
                     <span class="n">env_input_keys</span> <span class="o">=</span> <span class="n">env_input_keys</span><span class="o">.</span><span class="n">union</span><span class="p">(</span>
                         <span class="n">meta_data</span><span class="o">.</span><span class="n">specs</span><span class="p">[</span><span class="s2">&quot;input_spec&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
                     <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">env_input_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">env_input_keys</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">env_input_keys</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">env_input_keys</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">_sort_keys</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">env_input_keys</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;found 0 action keys in </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selected_keys</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;found 0 action keys in </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">selected_keys</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">_sort_keys</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_single_task</span><span class="p">:</span>
             <span class="n">shared_tensordict_parent</span> <span class="o">=</span> <span class="n">shared_tensordict_parent</span><span class="o">.</span><span class="n">select</span><span class="p">(</span>
